@@ -1,0 +1,6 @@
+to generate parts:
+
+	mkdir parts
+	python partsgen.py
+
+you can then find all parts in the directory "parts"
