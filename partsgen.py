@@ -109,7 +109,7 @@ parts = [
         ("2449",  "Slope Brick 75 2 x 1 x 3 Inverted"),
         ("3684",  "Slope Brick 75 2 x 2 x 3"),
         ("3685",  "Slope Brick 75 2 x 2 x 3 Double Convex"),
-        ]
+    ]
 
 def drawstud(studsx, studsz, x, z, lines, triangles, quads):
     # each stud is 4 LDU high and studs are 20 LDU apart
@@ -222,96 +222,194 @@ def render():
         elif m.group('type') in ['Slope Brick 18', 'Slope Brick 31',
                 'Slope Brick 33', 'Slope Brick 45', 'Slope Brick 65',
                 'Slope Brick 75']:
-            # draw studs
-            hasstuds = False
+            # draw studs (draw an L if double concave)
+            coordsL = [(0,0),(0,-1),(-1,-1),(-1,1),(1,1),(1,0)]
+            coords = [(-1,-1),(-1,1),(1,1),(1,-1)]
             if m.group('type') != 'Slope Brick 31' \
                     and 'Double' != m.group('slope') \
                     and 'Triple' != m.group('slope') \
                     and 'Double Concave / Double Convex' != m.group('slope'):
-                hasstuds = True
-                if m.group('slope') == 'Inverted':
+                if m.group('slope') in ['Inverted', 'Inverted Double Convex']:
                     for z in range(studsz):
                         for x in range(studsx):
                             drawstud(studsx, studsz, x, z, lines, triangles, quads)
+                elif m.group('slope') == 'Double Convex':
+                    drawstud(studsx, studsz, studsx-1, 0, lines, triangles, quads)
+                elif m.group('slope') == 'Double Concave':
+                    for z in range(studsz):
+                        for x in range(studsx):
+                            if z == 0 or x == studsx-1:
+                                drawstud(studsx, studsz, x, z, lines, triangles, quads)
                 else:
                     for x in range(studsx):
                         drawstud(studsx, studsz, x, 0, lines, triangles, quads)
-            # create top, bottom, inner and outer rectangles
-            coords = [(-1,-1),(-1,1),(1,1),(1,-1)]
-            if hasstuds:
+                # create top, bottom, inner and outer rectangles
                 if m.group('slope') == 'Inverted':
                     outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
+                    outertopcoords2 = [(studsx*10*x, 0, (z+studsz-1)*10) for x,z in coords] # small
+                    outerbottomcoords = [(studsx*10*x, height*8, (z+studsz-1)*10) for x,z in coords]
+                    innertopcoords = [((studsx*10-4)*x, 4, z*6+(studsz-1)*10) for x,z in coords]
+                    innerbottomcoords = [((studsx*10-4)*x, height*8, z*6+(studsz-1)*10) for x,z in coords]
+                    noseup = outertopcoords[:1]+outertopcoords[-1:]
+                    nosedown = [(x,4,z) for x,y,z in noseup]
+                elif m.group('slope') == 'Inverted Double Convex':
+                    outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
+                    outertopcoords2 = [((x-studsx+1)*10, 0, (z+studsz-1)*10) for x,z in coords] # small
+                    outerbottomcoords = [((x-studsx+1)*10, height*8, (z+studsz-1)*10) for x,z in coords]
+                    innertopcoords = [(6*x-(studsx-1)*10, 4, z*6+(studsz-1)*10) for x,z in coords]
+                    innerbottomcoords = [(6*x-(studsx-1)*10, height*8, z*6+(studsz-1)*10) for x,z in coords]
+                    noseup1 = outertopcoords[:1]+outertopcoords[-1:]
+                    nosedown1 = [(x,4,z) for x,y,z in noseup1]
+                    noseup2 = outertopcoords[-2:-1]+outertopcoords[-1:]
+                    nosedown2 = [(x,4,z) for x,y,z in noseup2]
+                elif m.group('slope') == 'Double Convex':
+                    outertopcoords = [((x-studsx+1)*10, 0, (z+studsz-1)*10) for x,z in coords]
+                    outerbottomcoords = [(studsx*10*x, height*8, studsz*10*z) for x,z in coords] # big
+                    outerbottomcoords2 = [((x-studsx+1)*10, height*8, (z+studsz-1)*10) for x,z in coords] # small
+                    innerbottomcoords = [(studsx*10*x-sign(x)*4, height*8, studsz*10*z-sign(z)*4) for x,z in coords]
+                    innertopcoords = [(6*x-(studsx-1)*10, 4, z*6+(studsz-1)*10) for x,z in coords]
+                    nosedown1 = outerbottomcoords[:1]+outerbottomcoords[-1:]
+                    noseup1 = [(x,height*8-4,z) for x,y,z in nosedown1]
+                    nosedown2 = outerbottomcoords[-2:-1]+outerbottomcoords[-1:]
+                    noseup2 = [(x,height*8-4,z) for x,y,z in nosedown2]
+                elif m.group('slope') == 'Double Concave':
+                    outertopcoords = [(studsx*10*x+(abs(x)-1)*(10*studsx-20), 0, studsz*10*z+(1-abs(z))*(10*studsz-20)) for x,z in coordsL]
+                    outerbottomcoords = [(studsx*10*x, height*8, studsz*10*z) for x,z in coords] # big
+                    outerbottomcoords2 = [(studsx*10*x+(abs(x)-1)*(10*studsx-20), height*8, studsz*10*z+(1-abs(z))*(10*studsz-20)) for x,z in coordsL] # small
+                    innertopcoords = [((studsx*10-4)*x+(abs(x)-1)*(10*studsx-20), 4, (studsz*10-4)*z+(1-abs(z))*(10*studsz-20)) for x,z in coordsL]
+                    innerbottomcoords = [((studsx*10-4)*x, height*8, (studsz*10-4)*z) for x,z in coords]
+                    tip = [(studsx*10,height*8,-studsz*10), (studsx*10,height*8-4,-studsz*10)]
                 else:
-                    outertopcoords = [(studsx*10*x, 0, z*10+(studsz-1)*10.0) for x,z in coords]
-            if m.group('slope') == 'Inverted':
-                outertopcoords2 = [(studsx*10*x, 0, z*10+(studsz-1)*10.0) for x,z in coords] # small
-            else:
-                outerbottomcoords2 = [(studsx*10*x, height*8, z*10+(studsz-1)*10.0) for x,z in coords] # small
-            if m.group('slope') == 'Inverted':
-                outerbottomcoords = [(studsx*10*x, height*8, z*10+(studsz-1)*10.0) for x,z in coords]
-            else:
-                outerbottomcoords = [(studsx*10*x, height*8, studsz*10*z) for x,z in coords] # big
-            if m.group('slope') != 'Inverted':
-                if hasstuds:
-                    innertopcoords = [((studsx*10-4)*x, 4, z*6+(studsz-1)*10.0) for x,z in coords]
-                innerbottomcoords = [(studsx*10*x-sign(x)*4, height*8, studsz*10*z-sign(z)*4) for x,z in coords]
-            if m.group('slope') == 'Inverted':
-                noseup = outertopcoords[:1]+outertopcoords[-1:]
-                nosedown = [(x,4,z) for x,y,z in noseup]
-            else:
-                nosedown = outerbottomcoords[:1]+outerbottomcoords[-1:]
-                noseup = [(x,height*8-4,z) for x,y,z in nosedown]
-            # write outer top plate and lines
-            if hasstuds:
-                quads.append(outertopcoords)
+                    outertopcoords = [(studsx*10*x, 0, (z+studsz-1)*10) for x,z in coords]
+                    outerbottomcoords2 = [(studsx*10*x, height*8, (z+studsz-1)*10) for x,z in coords] # small
+                    outerbottomcoords = [(studsx*10*x, height*8, studsz*10*z) for x,z in coords] # big
+                    innertopcoords = [((studsx*10-4)*x, 4, z*6+(studsz-1)*10) for x,z in coords]
+                    innerbottomcoords = [(studsx*10*x-sign(x)*4, height*8, studsz*10*z-sign(z)*4) for x,z in coords]
+                    nosedown = outerbottomcoords[:1]+outerbottomcoords[-1:]
+                    noseup = [(x,height*8-4,z) for x,y,z in nosedown]
+                # write outer top plate and lines
+                if m.group('slope') == 'Double Concave':
+                    quads.append(outertopcoords[:4])
+                    quads.append(outertopcoords[3:]+outertopcoords[:1])
+                else:
+                    quads.append(outertopcoords)
                 for p1, p2 in wrap(outertopcoords):
                     lines.append((p1, p2))
-            # outer sides and lines
-            if hasstuds:
+                # outer sides and lines
                 if m.group('slope') == 'Inverted':
                     for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[:3], wrap(outertopcoords2)[:3]):
                         quads.append((p1,p2,p4,p3))
                     for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[1:3], wrap(outertopcoords2)[1:3]):
+                        lines.append((p1,p3))
+                elif m.group('slope') == 'Inverted Double Convex':
+                    for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[:2], wrap(outertopcoords2)[:2]):
+                        quads.append((p1,p2,p4,p3))
+                    for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[1:2], wrap(outertopcoords2)[1:2]):
+                        lines.append((p1,p3))
+                elif m.group('slope') == 'Double Convex':
+                    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[:2], wrap(outerbottomcoords2)[:2]):
+                        quads.append((p1,p2,p4,p3))
+                    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[1:2], wrap(outerbottomcoords2)[1:2]):
+                        lines.append((p1,p3))
+                elif m.group('slope') == 'Double Concave':
+                    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[1:5], wrap(outerbottomcoords2)[1:5]):
+                        quads.append((p1,p2,p4,p3))
+                    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[2:5], wrap(outerbottomcoords2)[2:5]):
                         lines.append((p1,p3))
                 else:
                     for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[:3], wrap(outerbottomcoords2)[:3]):
                         quads.append((p1,p2,p4,p3))
                     for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[1:3], wrap(outerbottomcoords2)[1:3]):
                         lines.append((p1,p3))
-            # draw nose
-            quads.append(noseup+[nosedown[1]]+[nosedown[0]])
-            # draw sides and lines to the nose
-            if hasstuds:
+                # draw nose
+                if m.group('slope') in ['Inverted Double Convex', 'Double Convex']:
+                    quads.append(noseup1+[nosedown1[1]]+[nosedown1[0]])
+                    quads.append(noseup2+[nosedown2[1]]+[nosedown2[0]])
+                elif m.group('slope') != 'Double Concave':
+                    quads.append(noseup+[nosedown[1]]+[nosedown[0]])
+                # draw sides and lines to the nose
                 if m.group('slope') == 'Inverted':
                     quads.append(outerbottomcoords[-1:]+outertopcoords2[-1:]+nosedown[-1:]+noseup[-1:])
                     quads.append(outerbottomcoords[:1]+outertopcoords2[:1]+nosedown[:1]+noseup[:1])
+                elif m.group('slope') == 'Inverted Double Convex':
+                    quads.append(outerbottomcoords[-2:-1]+outertopcoords2[-2:-1]+nosedown2[:1]+noseup2[:1])
+                    quads.append(outerbottomcoords[:1]+outertopcoords2[:1]+nosedown1[:1]+noseup1[:1])
+                elif m.group('slope') == 'Double Convex':
+                    quads.append(outertopcoords[-2:-1]+outerbottomcoords2[-2:-1]+noseup2[:1]+nosedown2[:1])
+                    quads.append(outertopcoords[:1]+outerbottomcoords2[:1]+noseup1[:1]+nosedown1[:1])
+                elif m.group('slope') == 'Double Concave':
+                    quads.append(outertopcoords[-1:]+outerbottomcoords2[-1:]+tip)
+                    quads.append(outertopcoords[1:2]+outerbottomcoords2[1:2]+tip)
                 else:
                     quads.append(outertopcoords[-1:]+outerbottomcoords2[-1:]+nosedown[-1:]+noseup[-1:])
                     quads.append(outertopcoords[:1]+outerbottomcoords2[:1]+nosedown[:1]+noseup[:1])
-                lines.append(noseup[:1]+nosedown[:1])
-                lines.append(noseup[-1:]+nosedown[-1:])
-            # draw slope and lines around it
-            if hasstuds:
+                if m.group('slope') in ['Inverted Double Convex', 'Double Convex']:
+                    lines.append(noseup1[:1]+nosedown1[:1])
+                    lines.append(noseup1[-1:]+nosedown1[-1:])
+                    lines.append(noseup2[:1]+nosedown2[:1])
+                    lines.append(noseup2[-1:]+nosedown2[-1:])
+                elif m.group('slope') == 'Double Concave':
+                    lines.append(tip)
+                else:
+                    lines.append(noseup[:1]+nosedown[:1])
+                    lines.append(noseup[-1:]+nosedown[-1:])
+                # draw slope and lines around it
                 if m.group('slope') == 'Inverted':
                     quads.append(outerbottomcoords[-1:]+outerbottomcoords[:1]+[nosedown[1]]+[nosedown[0]])
                     lines.append(nosedown[:1]+outerbottomcoords[:1])
                     lines.append(nosedown[-1:]+outerbottomcoords[-1:])
                     lines.append(nosedown[:1]+nosedown[-1:])
+                    quads.append(outerbottomcoords)
+                elif m.group('slope') == 'Inverted Double Convex':
+                    quads.append(outerbottomcoords[-1:]+outerbottomcoords[:1]+[nosedown1[1]]+[nosedown1[0]])
+                    quads.append(outerbottomcoords[2:3]+outerbottomcoords[3:4]+[nosedown2[1]]+[nosedown2[0]])
+                    lines.append(nosedown1[:1]+outerbottomcoords[:1])
+                    lines.append(nosedown1[-1:]+outerbottomcoords[-1:])
+                    lines.append(nosedown2[-2:-1]+outerbottomcoords[-2:-1])
+                    lines.append(nosedown1[:1]+nosedown1[-1:])
+                    lines.append(nosedown2[:1]+nosedown2[-1:])
+                elif m.group('slope') == 'Double Convex':
+                    quads.append(outertopcoords[-1:]+outertopcoords[:1]+[noseup1[1]]+[noseup1[0]])
+                    quads.append(outertopcoords[2:3]+outertopcoords[3:4]+[noseup2[1]]+[noseup2[0]])
+                    lines.append(noseup1[:1]+outertopcoords[:1])
+                    lines.append(noseup1[-1:]+outertopcoords[-1:])
+                    lines.append(noseup2[-2:-1]+outertopcoords[-2:-1])
+                    lines.append(noseup1[:1]+noseup1[-1:])
+                    lines.append(noseup2[:1]+noseup2[-1:])
+                elif m.group('slope') == 'Double Concave':
+                    triangles.append(outertopcoords[-1:]+outertopcoords[:1]+[tip[1]])
+                    triangles.append(outertopcoords[:1]+outertopcoords[1:2]+[tip[1]])
+                    lines.append(outertopcoords[-1:]+[tip[1]])
+                    lines.append(outertopcoords[:1]+[tip[1]])
+                    lines.append(outertopcoords[1:2]+[tip[1]])
                 else:
                     quads.append(outertopcoords[-1:]+outertopcoords[:1]+[noseup[1]]+[noseup[0]])
                     lines.append(noseup[:1]+outertopcoords[:1])
                     lines.append(noseup[-1:]+outertopcoords[-1:])
                     lines.append(noseup[:1]+noseup[-1:])
-            # write inner top plate and lines
-            if m.group('slope') == 'Inverted':
-                quads.append(outerbottomcoords)
-            else:
-                if hasstuds:
+                # write inner top plate and lines
+                if m.group('slope') == 'Double Concave':
+                    quads.append(innertopcoords[:4])
+                    quads.append(innertopcoords[3:]+innertopcoords[:1])
+                else:
                     quads.append(innertopcoords)
-                    for p1, p2 in wrap(innertopcoords):
-                        lines.append((p1, p2))
+                for p1, p2 in wrap(innertopcoords):
+                    lines.append((p1, p2))
                 # inner sides and lines
-                if hasstuds:
+                if m.group('slope') == 'Double Concave':
+                    # the quadrilateral sides
+                    for (p1, p2), (p3, p4) in zip(wrap(innertopcoords)[1:5],
+                            wrap(innerbottomcoords)[-1:]+wrap(innerbottomcoords)[:4]):
+                        quads.append((p1,p2,p4,p3))
+                    for (p1, p2), (p3, p4) in zip(wrap(innertopcoords)[2:5], wrap(innerbottomcoords)[:4]):
+                        lines.append((p1,p3))
+                    # the slopes
+                    triangles.append(innertopcoords[-1:]+innertopcoords[:1]+innerbottomcoords[-1:])
+                    triangles.append(innertopcoords[:1]+innertopcoords[1:2]+innerbottomcoords[-1:])
+                    lines.append(innertopcoords[-1:]+innerbottomcoords[-1:])
+                    lines.append(innertopcoords[:1]+innerbottomcoords[-1:])
+                    lines.append(innertopcoords[1:2]+innerbottomcoords[-1:])
+                else:
                     for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
                         quads.append((p1,p2,p4,p3))
                         lines.append((p1,p3))
