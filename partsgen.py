@@ -133,12 +133,17 @@ def drawstud(studsx, studsz, x, z, lines, triangles, quads):
 
 def render_part(part):
     partid, parttext = part[:2]
+    ###################################################
+    # parse part text into usable information         #
+    ###################################################
     m = re.match(r"(?P<type>[A-Za-z0-9 ]+?) (?P<studsz>\d+)"+
             r" x (?P<studsx>\d+)(?: x (?P<height>\d+(?:/\d+)?))?"+
             r"(?: (?P<corner>Corner)| "+
             r"(?P<slope>(?:Double|Triple|Inverted|Concave|Convex| |/)+))?",
             parttext)
-    # sanity checks
+    ###################################################
+    # sanity checks                                   #
+    ###################################################
     if m.group('type') not in ['Brick', 'Plate', 'Slope Brick 18',
             'Slope Brick 31', 'Slope Brick 33', 'Slope Brick 45',
             'Slope Brick 65', 'Slope Brick 75']:
@@ -153,6 +158,9 @@ def render_part(part):
     if m.group('corner') and (m.group('studsx') != m.group('studsz')):
         print "corners must be squares"
         exit(1)
+    ###################################################
+    # set up data structures                          #
+    ###################################################
     lines = list()
     triangles = list()
     quads = list()
@@ -172,22 +180,30 @@ def render_part(part):
         height = 1
     # convert plate height to LDraw units
     height *= 8
-    if m.group('type') in ['Brick', 'Plate']:
+    ###################################################
+    # handle bricks, plates and slope brick 31        #
+    ###################################################
+    if m.group('type') in ['Brick', 'Plate', 'Slope Brick 31']:
         # draw studs
-        for z in range(studsz):
-            for x in range(studsx):
-                if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
-                    drawstud(studsx, studsz, x, z, lines, triangles, quads)
+        if m.group('type') != 'Slope Brick 31':
+            for z in range(studsz):
+                for x in range(studsx):
+                    if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
+                        drawstud(studsx, studsz, x, z, lines, triangles, quads)
         # create top, bottom, inner and outer rectangles
         # in case of a corner, draw an L otherwise draw a square
         if m.group('corner'):
             coords = [(0,0),(1,0),(1,-1),(-1,-1),(-1,1),(0,1)]
         else:
             coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
-        outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
-        outerbottomcoords = [(x, height, z) for x,y,z in outertopcoords]
         # walls are 4 LDU thick, use sign() in case x or y are zero
-        innertopcoords = [(studsx*10*x-sign(x)*4, 4, studsz*10*z-sign(z)*4) for x,z in coords]
+        if m.group('type') == 'Slope Brick 31':
+            outertopcoords = [(studsx*10*x, 0 if z == 1 else height-4, studsz*10*z) for x,z in coords]
+            innertopcoords = [(studsx*10*x-sign(x)*4, height-4, studsz*10*z-sign(z)*4) for x,z in coords]
+        else:
+            outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
+            innertopcoords = [(studsx*10*x-sign(x)*4, 4, studsz*10*z-sign(z)*4) for x,z in coords]
+        outerbottomcoords = [(x, height, z) for x,y,z in outertopcoords]
         innerbottomcoords = [(x, height, z) for x,y,z in innertopcoords]
         # write outer top plate and lines
         # in case of a corner draw two trapezoids, otherwise draw a rectangle
@@ -220,58 +236,25 @@ def render_part(part):
             quads.append((p1, p2, p4, p3))
             lines.append((p1, p2))
             lines.append((p3, p4))
-    elif m.group('type') == 'Slope Brick 31':
-        # create top, bottom, inner and outer rectangles
-        coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
-        outertopcoords = [(studsx*10*x, 0 if z == 1 else height-4, studsz*10*z) for x,z in coords]
-        outerbottomcoords = [(x, height, z) for x,y,z in outertopcoords]
-        # walls are 4 LDU thick, use sign() in case x or y are zero
-        innertopcoords = [(studsx*10*x-sign(x)*4, height-4, studsz*10*z-sign(z)*4) for x,z in coords]
-        innerbottomcoords = [(x, height, z) for x,y,z in innertopcoords]
-        # write outer top plate and lines
-        quads.append(outertopcoords)
-        for p1, p2 in wrap(outertopcoords):
-            lines.append((p1, p2))
-        # outer sides and lines
-        for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
-            quads.append((p1,p2,p4,p3))
-            lines.append((p1,p3))
-        # write inner top plate and lines
-        quads.append(innertopcoords)
-        for p1, p2 in wrap(innertopcoords):
-            lines.append((p1, p2))
-        # inner sides and lines
-        for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
-            quads.append((p1,p2,p4,p3))
-            lines.append((p1,p3))
-        # write out bottom with trapezoids and lines
-        for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
-            quads.append((p1, p2, p4, p3))
-            lines.append((p1, p2))
-            lines.append((p3, p4))
+    ###################################################
+    # handle slopes                                   #
+    ###################################################
     elif m.group('type') in ['Slope Brick 18', 'Slope Brick 33',
             'Slope Brick 45', 'Slope Brick 65', 'Slope Brick 75']:
         # draw studs (draw an L if double concave)
         coordsL = [(0,0),(0,-1),(-1,-1),(-1,1),(1,1),(1,0)]
         coords = [(-1,-1),(-1,1),(1,1),(1,-1)]
-        if 'Double' == m.group('slope'):
-            # create top, bottom, inner and outer rectangles
+        ###################################################
+        # handle double, triple slopes                    #
+        ###################################################
+        if m.group('slope') in ['Double', 'Triple', 'Double Concave / Double Convex']:
             coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
+            # create top, bottom, inner and outer rectangles
             outertopcoords = [(studsx*10*x, 24-4, studsz*10*z) for x,z in coords]
             outerbottomcoords = [(x, 24, z) for x,y,z in outertopcoords]
             # walls are 4 LDU thick, use sign() in case x or y are zero
             innertopcoords = [(studsx*10*x-sign(x)*4, 24-4, studsz*10*z-sign(z)*4) for x,z in coords]
             innerbottomcoords = [(x, 24, z) for x,y,z in innertopcoords]
-            if m.group('type') == 'Slope Brick 45':
-                ridge = [(studsx*10,0,0),(-studsx*10,0,0)]
-            elif m.group('type') == 'Slope Brick 33':
-                ridge = [(studsx*10,24-14,0),(-studsx*10,24-14,0)]
-            else:
-                print "unsupported slope type for double"
-                exit(1)
-            # write outer top lines
-            lines.append(outertopcoords[1:3])
-            lines.append(outertopcoords[:1]+outertopcoords[-1:])
             # outer sides and lines
             for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
                 quads.append((p1,p2,p4,p3))
@@ -289,103 +272,78 @@ def render_part(part):
                 quads.append((p1, p2, p4, p3))
                 lines.append((p1, p2))
                 lines.append((p3, p4))
-            # draw gables
-            triangles.append(ridge[:1]+outertopcoords[:2])
-            triangles.append(ridge[-1:]+outertopcoords[2:])
-            # draw slopes
-            quads.append(ridge+outertopcoords[1:3])
-            quads.append(ridge+outertopcoords[-1:]+outertopcoords[:1])
-            # draw lines for ridge and rakes
-            lines.append(ridge)
-            lines.append(ridge[:1]+outertopcoords[:1])
-            lines.append(ridge[:1]+outertopcoords[1:2])
-            lines.append(ridge[-1:]+outertopcoords[-1:])
-            lines.append(ridge[-1:]+outertopcoords[2:3])
-        elif 'Triple' == m.group('slope'):
-            # create top, bottom, inner and outer rectangles
-            coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
-            outertopcoords = [(studsx*10*x, 24-4, studsz*10*z) for x,z in coords]
-            outerbottomcoords = [(x, 24, z) for x,y,z in outertopcoords]
-            # walls are 4 LDU thick, use sign() in case x or y are zero
-            innertopcoords = [(studsx*10*x-sign(x)*4, 24-4, studsz*10*z-sign(z)*4) for x,z in coords]
-            innerbottomcoords = [(x, 24, z) for x,y,z in innertopcoords]
-            tip = (0,0,studsz*10)
-            # write outer top lines
-            for p1, p2 in wrap(outertopcoords)[:-1]:
-                lines.append((p1, p2))
-            # outer sides and lines
-            for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
-                quads.append((p1,p2,p4,p3))
-                lines.append((p1,p3))
-            # write inner top plate and lines
-            quads.append(innertopcoords)
-            for p1, p2 in wrap(innertopcoords):
-                lines.append((p1, p2))
-            # inner sides and lines
-            for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
-                quads.append((p1,p2,p4,p3))
-                lines.append((p1,p3))
-            # write out bottom with trapezoids and lines
-            for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
-                quads.append((p1, p2, p4, p3))
-                lines.append((p1, p2))
-                lines.append((p3, p4))
-            # write out slopes and lines
-            for p1, p2 in wrap(outertopcoords):
-                triangles.append([p1,p2,tip])
-                lines.append((p1,tip))
-        elif 'Double Concave / Double Convex' == m.group('slope'):
-            # create top, bottom, inner and outer rectangles
-            coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
-            outertopcoords = [(studsx*10*x, 24-4, studsz*10*z) for x,z in coords]
-            outerbottomcoords = [(x, 24, z) for x,y,z in outertopcoords]
-            # walls are 4 LDU thick, use sign() in case x or y are zero
-            innertopcoords = [(studsx*10*x-sign(x)*4, 24-4, studsz*10*z-sign(z)*4) for x,z in coords]
-            innerbottomcoords = [(x, 24, z) for x,y,z in innertopcoords]
-            if m.group('type') != 'Slope Brick 45':
-                print "unsupported slope type for double concave / double convex"
-                exit(1)
-            ridge1 = [(0,0,0),(-studsx*10,0,0)]
-            ridge2 = [(0,0,studsz*10),(0,0,0)]
-            # write outer top lines (eaves)
-            lines.append(outertopcoords[1:3])
-            lines.append(outertopcoords[:2])
-            # outer sides and lines
-            for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
-                quads.append((p1,p2,p4,p3))
-                lines.append((p1,p3))
-            # write inner top plate and lines
-            quads.append(innertopcoords)
-            for p1, p2 in wrap(innertopcoords):
-                lines.append((p1, p2))
-            # inner sides and lines
-            for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
-                quads.append((p1,p2,p4,p3))
-                lines.append((p1,p3))
-            # write out bottom with trapezoids and lines
-            for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
-                quads.append((p1, p2, p4, p3))
-                lines.append((p1, p2))
-                lines.append((p3, p4))
-            # draw gables
-            triangles.append(ridge1[-1:]+outertopcoords[2:])
-            triangles.append(ridge2[:1]+outertopcoords[:1]+outertopcoords[-1:])
-            # draw slopes
-            quads.append(ridge1+outertopcoords[1:3])
-            quads.append(ridge2+outertopcoords[:2])
-            triangles.append(ridge1+outertopcoords[-1:])
-            triangles.append(ridge2+outertopcoords[-1:])
-            # draw ridges
-            lines.append(ridge1)
-            lines.append(ridge2)
-            # draw rakes
-            lines.append(ridge1[-1:]+outertopcoords[2:3])
-            lines.append(ridge1[-1:]+outertopcoords[-1:])
-            lines.append(ridge2[:1]+outertopcoords[:1])
-            lines.append(ridge2[:1]+outertopcoords[-1:])
-            # draw valley and hip
-            lines.append(((0,0,0),outertopcoords[-1]))
-            lines.append(((0,0,0),outertopcoords[1]))
+            ###################################################
+            # handle triple slopes                            #
+            ###################################################
+            if 'Triple' == m.group('slope'):
+                tip = (0,0,studsz*10)
+                # write outer top lines
+                for p1, p2 in wrap(outertopcoords)[:-1]:
+                    lines.append((p1, p2))
+                # write out slopes and lines
+                for p1, p2 in wrap(outertopcoords):
+                    triangles.append([p1,p2,tip])
+                    lines.append((p1,tip))
+            ###################################################
+            # handle double slopes                            #
+            ###################################################
+            elif 'Double' == m.group('slope'):
+                if m.group('type') == 'Slope Brick 45':
+                    ridge = [(studsx*10,0,0),(-studsx*10,0,0)]
+                elif m.group('type') == 'Slope Brick 33':
+                    ridge = [(studsx*10,24-14,0),(-studsx*10,24-14,0)]
+                else:
+                    print "unsupported slope type for double"
+                    exit(1)
+                # write outer top lines
+                lines.append(outertopcoords[1:3])
+                lines.append(outertopcoords[:1]+outertopcoords[-1:])
+                # draw gables
+                triangles.append(ridge[:1]+outertopcoords[:2])
+                triangles.append(ridge[-1:]+outertopcoords[2:])
+                # draw slopes
+                quads.append(ridge+outertopcoords[1:3])
+                quads.append(ridge+outertopcoords[-1:]+outertopcoords[:1])
+                # draw lines for ridge and rakes
+                lines.append(ridge)
+                lines.append(ridge[:1]+outertopcoords[:1])
+                lines.append(ridge[:1]+outertopcoords[1:2])
+                lines.append(ridge[-1:]+outertopcoords[-1:])
+                lines.append(ridge[-1:]+outertopcoords[2:3])
+            ###################################################
+            # handle double concave / double convex slopes    #
+            ###################################################
+            elif 'Double Concave / Double Convex' == m.group('slope'):
+                if m.group('type') != 'Slope Brick 45':
+                    print "unsupported slope type for double concave / double convex"
+                    exit(1)
+                ridge1 = [(0,0,0),(-studsx*10,0,0)]
+                ridge2 = [(0,0,studsz*10),(0,0,0)]
+                # write outer top lines (eaves)
+                lines.append(outertopcoords[1:3])
+                lines.append(outertopcoords[:2])
+                # draw gables
+                triangles.append(ridge1[-1:]+outertopcoords[2:])
+                triangles.append(ridge2[:1]+outertopcoords[:1]+outertopcoords[-1:])
+                # draw slopes
+                quads.append(ridge1+outertopcoords[1:3])
+                quads.append(ridge2+outertopcoords[:2])
+                triangles.append(ridge1+outertopcoords[-1:])
+                triangles.append(ridge2+outertopcoords[-1:])
+                # draw ridges
+                lines.append(ridge1)
+                lines.append(ridge2)
+                # draw rakes
+                lines.append(ridge1[-1:]+outertopcoords[2:3])
+                lines.append(ridge1[-1:]+outertopcoords[-1:])
+                lines.append(ridge2[:1]+outertopcoords[:1])
+                lines.append(ridge2[:1]+outertopcoords[-1:])
+                # draw valley and hip
+                lines.append(((0,0,0),outertopcoords[-1]))
+                lines.append(((0,0,0),outertopcoords[1]))
+        ###################################################
+        # handle all other slopes                         #
+        ###################################################
         else:
             if m.group('slope') in ['Inverted', 'Inverted Double Convex']:
                 for z in range(studsz):
@@ -401,7 +359,9 @@ def render_part(part):
             else:
                 for x in range(studsx):
                     drawstud(studsx, studsz, x, 0, lines, triangles, quads)
-            # create top, bottom, inner and outer rectangles
+            ###################################################
+            # create top, bottom, inner and outer rectangles  #
+            ###################################################
             if m.group('slope') in ['Double Convex', 'Inverted Double Convex']:
                 outertopcoords = [((x-studsx+1)*10, 0, (z+studsz-1)*10) for x,z in coords]
                 outerbottomcoords = [(studsx*10*x, height, studsz*10*z) for x,z in coords] # big
@@ -449,7 +409,9 @@ def render_part(part):
                             [(x,4,z) for x,y,z in innertopcoords],
                             [(x,height,z) for x,y,z in innertopcoords])
                     noseup, nosedown = [(x,0,z) for x,y,z in nosedown], [(x,4,z) for x,y,z in noseup]
-            # outer sides and lines
+            ###################################################
+            # create outer sides and lines                    #
+            ###################################################
             if m.group('slope') in ['Double Convex', 'Inverted Double Convex']:
                 for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[:2], wrap(helpercoords)[:2]):
                     quads.append((p1,p2,p4,p3))
@@ -465,13 +427,17 @@ def render_part(part):
                     quads.append((p1,p2,p4,p3))
                 for (p1, p2), (p3, p4) in zip(wrap(outertopcoords)[1:3], wrap(helpercoords)[1:3]):
                     lines.append((p1,p3))
-            # draw nose
+            ###################################################
+            # draw nose                                       #
+            ###################################################
             if m.group('slope') in ['Inverted Double Convex', 'Double Convex']:
                 quads.append(noseup1+[nosedown1[1]]+[nosedown1[0]])
                 quads.append(noseup2+[nosedown2[1]]+[nosedown2[0]])
             elif m.group('slope') != 'Double Concave':
                 quads.append(noseup+[nosedown[1]]+[nosedown[0]])
-            # draw sides and lines to the nose
+            ###################################################
+            # draw sides and lines to the nose                #
+            ###################################################
             if m.group('slope') in ['Double Convex', 'Inverted Double Convex']:
                 quads.append(outertopcoords[-2:-1]+helpercoords[-2:-1]+noseup2[:1]+nosedown2[:1])
                 quads.append(outertopcoords[:1]+helpercoords[:1]+noseup1[:1]+nosedown1[:1])
@@ -491,7 +457,9 @@ def render_part(part):
             else:
                 lines.append(noseup[:1]+nosedown[:1])
                 lines.append(noseup[-1:]+nosedown[-1:])
-            # write inner top plate and lines
+            ###################################################
+            # write inner top plate and lines                 #
+            ###################################################
             if m.group('slope') == 'Double Concave':
                 quads.append(innertopcoords[:4])
                 quads.append(innertopcoords[3:]+innertopcoords[:1])
@@ -499,7 +467,9 @@ def render_part(part):
                 quads.append(innertopcoords)
             for p1, p2 in wrap(innertopcoords):
                 lines.append((p1, p2))
-            # inner sides and lines
+            ###################################################
+            # inner sides and lines                           #
+            ###################################################
             if m.group('slope') == 'Double Concave':
                 # the quadrilateral sides
                 for (p1, p2), (p3, p4) in zip(wrap(innertopcoords)[1:5],
@@ -517,7 +487,9 @@ def render_part(part):
                 for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
                     quads.append((p1,p2,p4,p3))
                     lines.append((p1,p3))
-            # draw slope and lines around it
+            ###################################################
+            # draw slope and lines around it                  #
+            ###################################################
             if m.group('slope') in ['Double Convex', 'Inverted Double Convex']:
                 if m.group('slope') == 'Inverted Double Convex':
                     noseup1, nosedown1, noseup2, nosedown2 = nosedown1, noseup1, nosedown2, noseup2
@@ -541,15 +513,21 @@ def render_part(part):
                 lines.append(noseup[:1]+outertopcoords[:1])
                 lines.append(noseup[-1:]+outertopcoords[-1:])
                 lines.append(noseup[:1]+noseup[-1:])
-            # for drawing the top and bottom, switch the coords if necessary
+            ###################################################
+            # for drawing top/bottom, switch the coords       #
+            ###################################################
             if m.group('slope') in ['Inverted Double Convex', 'Inverted']:
                 outertopcoords, outerbottomcoords = outerbottomcoords, outertopcoords
-            # write out bottom with trapezoids and lines
+            ###################################################
+            # write out bottom with trapezoids and lines      #
+            ###################################################
             for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
                 quads.append((p1, p2, p4, p3))
                 lines.append((p1, p2))
                 lines.append((p3, p4))
-            # write outer top plate and lines
+            ###################################################
+            # write outer top plate and lines                 #
+            ###################################################
             if m.group('slope') == 'Double Concave':
                 quads.append(outertopcoords[:4])
                 quads.append(outertopcoords[3:]+outertopcoords[:1])
