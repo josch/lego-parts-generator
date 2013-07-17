@@ -244,15 +244,7 @@ def render():
                     for x in range(studsx):
                         drawstud(studsx, studsz, x, 0, lines, triangles, quads)
                 # create top, bottom, inner and outer rectangles
-                if m.group('slope') == 'Inverted':
-                    outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
-                    outertopcoords2 = [(studsx*10*x, 0, (z+studsz-1)*10) for x,z in coords] # small
-                    outerbottomcoords = [(studsx*10*x, height*8, (z+studsz-1)*10) for x,z in coords]
-                    innertopcoords = [((studsx*10-4)*x, 4, z*6+(studsz-1)*10) for x,z in coords]
-                    innerbottomcoords = [((studsx*10-4)*x, height*8, z*6+(studsz-1)*10) for x,z in coords]
-                    noseup = outertopcoords[:1]+outertopcoords[-1:]
-                    nosedown = [(x,4,z) for x,y,z in noseup]
-                elif m.group('slope') == 'Inverted Double Convex':
+                if m.group('slope') == 'Inverted Double Convex':
                     outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
                     outertopcoords2 = [((x-studsx+1)*10, 0, (z+studsz-1)*10) for x,z in coords] # small
                     outerbottomcoords = [((x-studsx+1)*10, height*8, (z+studsz-1)*10) for x,z in coords]
@@ -287,6 +279,17 @@ def render():
                     innerbottomcoords = [(studsx*10*x-sign(x)*4, height*8, studsz*10*z-sign(z)*4) for x,z in coords]
                     nosedown = outerbottomcoords[:1]+outerbottomcoords[-1:]
                     noseup = [(x,height*8-4,z) for x,y,z in nosedown]
+                    # invert all the coordinates along the y axis
+                    if m.group('slope') == 'Inverted':
+                        outertopcoords, outertopcoords2, outerbottomcoords = (
+                                [(x,0,z) for x,y,z in outerbottomcoords],
+                                [(x,0,z) for x,y,z in outerbottomcoords2],
+                                [(x,height*8,z) for x,y,z in outertopcoords])
+                        innertopcoords, innerbottomcoords = (
+                                [(x,4,z) for x,y,z in innertopcoords],
+                                [(x,height*8,z) for x,y,z in innertopcoords])
+                        noseup = outertopcoords[:1]+outertopcoords[-1:]
+                        nosedown = [(x,4,z) for x,y,z in noseup]
                 # write outer top plate and lines
                 if m.group('slope') == 'Double Concave':
                     quads.append(outertopcoords[:4])
@@ -296,12 +299,7 @@ def render():
                 for p1, p2 in wrap(outertopcoords):
                     lines.append((p1, p2))
                 # outer sides and lines
-                if m.group('slope') == 'Inverted':
-                    for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[:3], wrap(outertopcoords2)[:3]):
-                        quads.append((p1,p2,p4,p3))
-                    for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[1:3], wrap(outertopcoords2)[1:3]):
-                        lines.append((p1,p3))
-                elif m.group('slope') == 'Inverted Double Convex':
+                if m.group('slope') == 'Inverted Double Convex':
                     for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[:2], wrap(outertopcoords2)[:2]):
                         quads.append((p1,p2,p4,p3))
                     for (p1, p2), (p3, p4) in zip(wrap(outerbottomcoords)[1:2], wrap(outertopcoords2)[1:2]):
@@ -328,10 +326,7 @@ def render():
                 elif m.group('slope') != 'Double Concave':
                     quads.append(noseup+[nosedown[1]]+[nosedown[0]])
                 # draw sides and lines to the nose
-                if m.group('slope') == 'Inverted':
-                    quads.append(outerbottomcoords[-1:]+outertopcoords2[-1:]+nosedown[-1:]+noseup[-1:])
-                    quads.append(outerbottomcoords[:1]+outertopcoords2[:1]+nosedown[:1]+noseup[:1])
-                elif m.group('slope') == 'Inverted Double Convex':
+                if m.group('slope') == 'Inverted Double Convex':
                     quads.append(outerbottomcoords[-2:-1]+outertopcoords2[-2:-1]+nosedown2[:1]+noseup2[:1])
                     quads.append(outerbottomcoords[:1]+outertopcoords2[:1]+nosedown1[:1]+noseup1[:1])
                 elif m.group('slope') == 'Double Convex':
@@ -359,7 +354,6 @@ def render():
                     lines.append(nosedown[:1]+outerbottomcoords[:1])
                     lines.append(nosedown[-1:]+outerbottomcoords[-1:])
                     lines.append(nosedown[:1]+nosedown[-1:])
-                    quads.append(outerbottomcoords)
                 elif m.group('slope') == 'Inverted Double Convex':
                     quads.append(outerbottomcoords[-1:]+outerbottomcoords[:1]+[nosedown1[1]]+[nosedown1[0]])
                     quads.append(outerbottomcoords[2:3]+outerbottomcoords[3:4]+[nosedown2[1]]+[nosedown2[0]])
