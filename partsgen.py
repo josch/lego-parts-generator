@@ -150,6 +150,8 @@ parts = [
         ("3811",  "Baseplate 32 x 32"),
         ("4186",  "Baseplate 48 x 48"),
         ("782",   "Baseplate 50 x 50"),
+        ("3794a", "Plate 1 x 2 with Center Stud"),
+        ("87580", "Plate 2 x 2 with Center Stud"),
     ]
 
 def drawstud(studsx, studsz, x, z, lines, triangles, quads):
@@ -180,7 +182,8 @@ def render_part(part):
     m = re.match(r"(?P<type>[A-Za-z0-9 ]+?) (?P<studsz>\d+)"+
             r" x (?P<studsx>\d+)(?: x (?P<height>\d+(?:/\d+)?))?"+
             r"(?: (?P<corner>Corner)| "+
-            r"(?P<slope>(?:Double|Triple|Inverted|Concave|Convex| |/)+))?",
+            r"(?P<slope>(?:Double|Triple|Inverted|Concave|Convex| |/)+)| "+
+            r"(?P<centerstud>with Center Stud))?",
             parttext)
     ###################################################
     # sanity checks                                   #
@@ -246,7 +249,9 @@ def render_part(part):
             lines.append((p1, p2))
     elif m.group('type') in ['Brick', 'Plate', 'Slope Brick 31', 'Tile']:
         # draw studs
-        if m.group('type') not in ['Slope Brick 31', 'Tile']:
+        if m.group('centerstud'):
+            drawstud(1, 1, 0, 0, lines, triangles, quads)
+        elif m.group('type') not in ['Slope Brick 31', 'Tile']:
             for z in range(studsz):
                 for x in range(studsx):
                     if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
