@@ -126,6 +126,30 @@ parts = [
         ("2449",  "Slope Brick 75 2 x 1 x 3 Inverted"),
         ("3684",  "Slope Brick 75 2 x 2 x 3"),
         ("3685",  "Slope Brick 75 2 x 2 x 3 Double Convex"),
+        ("3070b", "Tile 1 x 1"),
+        ("3069b", "Tile 1 x 2"),
+        ("63864", "Tile 1 x 3"),
+        ("2431",  "Tile 1 x 4"),
+        ("6636",  "Tile 1 x 6"),
+        ("4162",  "Tile 1 x 8"),
+        ("3068b", "Tile 2 x 2"),
+        ("87079", "Tile 2 x 4"),
+        ("6934",  "Tile 3 x 6"),
+        ("6881a", "Tile 6 x 6"),
+        ("819",   "Baseplate 8 x 12"),
+        ("3865",  "Baseplate 8 x 16"),
+        ("3497",  "Baseplate 8 x 24"),
+        ("4187",  "Baseplate 8 x 32"),
+        ("397",   "Baseplate 10 x 16"),
+        ("3867",  "Baseplate 16 x 16"),
+        ("184",   "Baseplate 16 x 18"),
+        ("210",   "Baseplate 16 x 22"),
+        ("3334",  "Baseplate 16 x 24"),
+        ("3857",  "Baseplate 16 x 32"),
+        ("3645",  "Baseplate 24 x 40"),
+        ("3811",  "Baseplate 32 x 32"),
+        ("4186",  "Baseplate 48 x 48"),
+        ("782",   "Baseplate 50 x 50"),
     ]
 
 def drawstud(studsx, studsz, x, z, lines, triangles, quads):
@@ -163,7 +187,7 @@ def render_part(part):
     ###################################################
     if m.group('type') not in ['Brick', 'Plate', 'Slope Brick 18',
             'Slope Brick 31', 'Slope Brick 33', 'Slope Brick 45',
-            'Slope Brick 65', 'Slope Brick 75']:
+            'Slope Brick 65', 'Slope Brick 75', 'Tile', 'Baseplate']:
         print "not supported part type: %s"%m.group('type')
         exit(1)
     if m.group('type') == 'Plate' and m.group('height'):
@@ -200,9 +224,29 @@ def render_part(part):
     ###################################################
     # handle bricks, plates and slope brick 31        #
     ###################################################
-    if m.group('type') in ['Brick', 'Plate', 'Slope Brick 31']:
+    if m.group('type') == 'Baseplate':
+        for z in range(studsz):
+            for x in range(studsx):
+                drawstud(studsx, studsz, x, z, lines, triangles, quads)
+        coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
+        outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
+        # baseplates are 4 LDU high
+        outerbottomcoords = [(x, 4, z) for x,y,z in outertopcoords]
+        # write outer top plate and lines
+        quads.append(outertopcoords)
+        for p1, p2 in wrap(outertopcoords):
+            lines.append((p1, p2))
+        # outer sides and lines
+        for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
+            quads.append((p1,p2,p4,p3))
+            lines.append((p1,p3))
+        # write outer bottom plate and lines
+        quads.append(outerbottomcoords)
+        for p1, p2 in wrap(outerbottomcoords):
+            lines.append((p1, p2))
+    elif m.group('type') in ['Brick', 'Plate', 'Slope Brick 31', 'Tile']:
         # draw studs
-        if m.group('type') != 'Slope Brick 31':
+        if m.group('type') not in ['Slope Brick 31', 'Tile']:
             for z in range(studsz):
                 for x in range(studsx):
                     if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
