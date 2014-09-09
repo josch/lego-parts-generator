@@ -1,18 +1,10 @@
-To generate parts:
-
-	mkdir parts
-	python partsgen.py
+To generate parts the parts, just run `make`.
 
 You can then find all parts in the directory "parts"
 
-The default Makefile target allows to generate bitmaps of all the parts using
-ldview.
+You can generate bitmaps of all parts using `make montage.png`. This needs
+ldview and imagemagick. Here is the result:
 
-	mkdir bitmaps
-	make
+https://mister-muffin.de/p/9reb.png
 
-You need to have ldview and imagemagick installed. Imagemagick is used to
-create a montage of all individual images. Here is a preview:
-
-	http://mister-muffin.de/p/p36V.png
-	http://mister-muffin.de/p/tda4.png
+The individual bitmaps are placed in the `bitmaps` subdirectory.
