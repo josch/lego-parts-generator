@@ -229,7 +229,6 @@ def render_part(part):
         for z in range(studsz):
             for x in range(studsx):
                 files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
-                #drawstud(studsx, studsz, x, z, lines, triangles, quads)
         coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
         outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
         # baseplates are 4 LDU high
@@ -250,13 +249,11 @@ def render_part(part):
         # draw studs
         if m.group('centerstud'):
             files.append((0,0,0,"stud.dat"))
-            #drawstud(1, 1, 0, 0, lines, triangles, quads)
         elif m.group('type') not in ['Slope Brick 31', 'Tile']:
             for z in range(studsz):
                 for x in range(studsx):
                     if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
                         files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
-                        #drawstud(studsx, studsz, x, z, lines, triangles, quads)
         # create top, bottom, inner and outer rectangles
         # in case of a corner, draw an L otherwise draw a square
         if m.group('corner'):
@@ -416,20 +413,16 @@ def render_part(part):
                 for z in range(studsz):
                     for x in range(studsx):
                         files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
-                        #drawstud(studsx, studsz, x, z, lines, triangles, quads)
             elif m.group('slope') == 'Double Convex':
-                files.append(((studsx/2.0 - studsx+1)*20 - 10, 0, (studsz/2.0)*20 - 10,"stud.dat"))
-                #drawstud(studsx, studsz, studsx-1, 0, lines, triangles, quads)
+                files.append((-10*(studsx-1), 0, 10*(studsz-1),"stud.dat"))
             elif m.group('slope') == 'Double Concave':
                 for z in range(studsz):
                     for x in range(studsx):
                         if z == 0 or x == studsx-1:
                             files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
-                            #drawstud(studsx, studsz, x, z, lines, triangles, quads)
             else:
                 for x in range(studsx):
-                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0)*20 - 10,"stud.dat"))
-                    #drawstud(studsx, studsz, x, 0, lines, triangles, quads)
+                    files.append(((studsx/2.0 - x)*20 - 10, 0, 10*(studsz-1),"stud.dat"))
             ###################################################
             # create top, bottom, inner and outer rectangles  #
             ###################################################
