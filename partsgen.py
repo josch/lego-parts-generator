@@ -626,6 +626,25 @@ def render_part(part):
             x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
     outfile.close()
 
+# coordinates are normalized with six significant digits after the comma
+# because of the following distribution of the official ldraw files:
+# egrep -ho '\.[^ e]+' /usr/share/ldraw-parts/p/* /usr/share/ldraw-parts/parts/* | awk '{ print length-1 }' | sort -n | uniq -c
+# 1175688 1
+# 2548068 2
+# 3076127 3
+# 1170125 4
+#  209386 5
+#   33254 6
+#    2274 7
+#     107 8
+#     109 9
+#      15 10
+#      54 14
+#       1 17
+#       1 18
+#       2 28
+
+
 if __name__ == "__main__":
     lines = list()
     triangles = list()
