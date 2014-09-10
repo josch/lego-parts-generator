@@ -202,6 +202,7 @@ def render_part(part):
     ###################################################
     # set up data structures                          #
     ###################################################
+    files = list()
     lines = list()
     triangles = list()
     quads = list()
@@ -227,7 +228,8 @@ def render_part(part):
     if m.group('type') == 'Baseplate':
         for z in range(studsz):
             for x in range(studsx):
-                drawstud(studsx, studsz, x, z, lines, triangles, quads)
+                files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
+                #drawstud(studsx, studsz, x, z, lines, triangles, quads)
         coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
         outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
         # baseplates are 4 LDU high
@@ -247,12 +249,14 @@ def render_part(part):
     elif m.group('type') in ['Brick', 'Plate', 'Slope Brick 31', 'Tile']:
         # draw studs
         if m.group('centerstud'):
-            drawstud(1, 1, 0, 0, lines, triangles, quads)
+            files.append((0,0,0,"stud.dat"))
+            #drawstud(1, 1, 0, 0, lines, triangles, quads)
         elif m.group('type') not in ['Slope Brick 31', 'Tile']:
             for z in range(studsz):
                 for x in range(studsx):
                     if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
-                        drawstud(studsx, studsz, x, z, lines, triangles, quads)
+                        files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
+                        #drawstud(studsx, studsz, x, z, lines, triangles, quads)
         # create top, bottom, inner and outer rectangles
         # in case of a corner, draw an L otherwise draw a square
         if m.group('corner'):
@@ -411,17 +415,21 @@ def render_part(part):
             if m.group('slope') in ['Inverted', 'Inverted Double Convex']:
                 for z in range(studsz):
                     for x in range(studsx):
-                        drawstud(studsx, studsz, x, z, lines, triangles, quads)
+                        files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
+                        #drawstud(studsx, studsz, x, z, lines, triangles, quads)
             elif m.group('slope') == 'Double Convex':
-                drawstud(studsx, studsz, studsx-1, 0, lines, triangles, quads)
+                files.append(((studsx/2.0 - studsx+1)*20 - 10, 0, (studsz/2.0)*20 - 10,"stud.dat"))
+                #drawstud(studsx, studsz, studsx-1, 0, lines, triangles, quads)
             elif m.group('slope') == 'Double Concave':
                 for z in range(studsz):
                     for x in range(studsx):
                         if z == 0 or x == studsx-1:
-                            drawstud(studsx, studsz, x, z, lines, triangles, quads)
+                            files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,"stud.dat"))
+                            #drawstud(studsx, studsz, x, z, lines, triangles, quads)
             else:
                 for x in range(studsx):
-                    drawstud(studsx, studsz, x, 0, lines, triangles, quads)
+                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0)*20 - 10,"stud.dat"))
+                    #drawstud(studsx, studsz, x, 0, lines, triangles, quads)
             ###################################################
             # create top, bottom, inner and outer rectangles  #
             ###################################################
@@ -606,6 +614,8 @@ def render_part(part):
     ###################################################
     outfile = open("parts/%s.dat"%partid, 'w')
     outfile.write("0 %s\n"%parttext)
+    for (x,y,z,f) in files:
+        outfile.write("1 16 %f %f %f 1 0 0 0 1 0 0 0 1 %s\n"%(x,y,z,f))
     for (x1, y1, z1), (x2, y2, z2) in lines:
         outfile.write("2 24 %f %f %f %f %f %f\n"%(x1, y1, z1, x2, y2, z2))
     for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
@@ -617,5 +627,19 @@ def render_part(part):
     outfile.close()
 
 if __name__ == "__main__":
+    lines = list()
+    triangles = list()
+    quads = list()
+    drawstud(1, 1, 0, 0, lines, triangles, quads)
+    outfile = open("parts/stud.dat", 'w')
+    for (x1, y1, z1), (x2, y2, z2) in lines:
+        outfile.write("2 24 %f %f %f %f %f %f\n"%(x1, y1, z1, x2, y2, z2))
+    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
+        outfile.write("3 16 %f %f %f %f %f %f %f %f %f\n"%(
+            x1, y1, z1, x2, y2, z2, x3, y3, z3))
+    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
+        outfile.write("4 16 %f %f %f %f %f %f %f %f %f %f %f %f\n"%(
+            x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
+    outfile.close()
     for part in parts:
         render_part(part)
