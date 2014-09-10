@@ -615,14 +615,18 @@ def render_part(part):
     outfile = open("parts/%s.dat"%partid, 'w')
     outfile.write("0 %s\n"%parttext)
     for (x,y,z,f) in files:
-        outfile.write("1 16 %f %f %f 1 0 0 0 1 0 0 0 1 %s\n"%(x,y,z,f))
+        x,y,z = [round(t,6)+0 for t in x,y,z]
+        outfile.write("1 16 %s %s %s 1 0 0 0 1 0 0 0 1 %s\n"%(x,y,z,f))
     for (x1, y1, z1), (x2, y2, z2) in lines:
-        outfile.write("2 24 %f %f %f %f %f %f\n"%(x1, y1, z1, x2, y2, z2))
+        x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
+        outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
     for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
-        outfile.write("3 16 %f %f %f %f %f %f %f %f %f\n"%(
+        x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
+        outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
             x1, y1, z1, x2, y2, z2, x3, y3, z3))
     for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
-        outfile.write("4 16 %f %f %f %f %f %f %f %f %f %f %f %f\n"%(
+        x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
+        outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
             x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
     outfile.close()
 
@@ -652,12 +656,15 @@ if __name__ == "__main__":
     drawstud(1, 1, 0, 0, lines, triangles, quads)
     outfile = open("parts/stud.dat", 'w')
     for (x1, y1, z1), (x2, y2, z2) in lines:
-        outfile.write("2 24 %f %f %f %f %f %f\n"%(x1, y1, z1, x2, y2, z2))
+        x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
+        outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
     for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
-        outfile.write("3 16 %f %f %f %f %f %f %f %f %f\n"%(
+        x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
+        outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
             x1, y1, z1, x2, y2, z2, x3, y3, z3))
     for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
-        outfile.write("4 16 %f %f %f %f %f %f %f %f %f %f %f %f\n"%(
+        x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
+        outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
             x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
     outfile.close()
     for part in parts:
