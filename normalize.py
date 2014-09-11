@@ -61,13 +61,16 @@ def handle_file(fname,lines,triangles,quads):
                 print("unknown line type: %s"%t[0], file=sys.stderr)
                 exit(1)
 
+# we round to six digits and add zero to avoid printing a negative zero
 def normalize_l(c,x1,y1,z1,x2,y2,z2):
+    x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
     if (x1,y1,z1) < (x2,y2,z2):
         return (c,x1,y1,z1,x2,y2,z2)
     else:
         return (c,x2,y2,z2,x1,y1,z1)
 
 def normalize_t(c,x1,y1,z1,x2,y2,z2,x3,y3,z3):
+    x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
     # since winding order does not matter, we just sort
     pts = sorted([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3)])
     x1,y1,z1,x2,y2,z2,x3,y3,z3 = itertools.chain.from_iterable(pts)
@@ -79,6 +82,7 @@ def rotate(cycle):
     return cycle[smallest_idx:]+cycle[:smallest_idx]
 
 def normalize_q(c,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4):
+    x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
     # rotate the smallest coordinate to the front
     pts = rotate([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4)])
     # winding order does not matter, so deciding whether or not the next point
@@ -99,13 +103,9 @@ if __name__ == '__main__':
     quads = [ normalize_q(*x) for x in quads]
     # now output the normalized values
     with open(os.path.join(sys.argv[2],os.path.basename(sys.argv[1])), "w") as outfile:
-        # we round to six digits and add zero to avoid printing a negative zero
         for c,x1,y1,z1,x2,y2,z2 in sorted(lines):
-            x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
             outfile.write("2 %d %s %s %s %s %s %s\n"%(c,x1,y1,z1,x2,y2,z2))
         for c,x1,y1,z1,x2,y2,z2,x3,y3,z3 in sorted(triangles):
-            x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
             outfile.write("3 %d %s %s %s %s %s %s %s %s %s\n"%(c,x1,y1,z1,x2,y2,z2,x3,y3,z3))
         for c,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 in sorted(quads):
-            x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
             outfile.write("4 %d %s %s %s %s %s %s %s %s %s %s %s %s\n"%(c,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4))
