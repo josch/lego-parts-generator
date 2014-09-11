@@ -182,22 +182,28 @@ def subdivide(rect):
         rect2 = (x,y+k,w,h-k)
         return subdivide(rect1) + subdivide(rect2)
 
+def toint(x):
+    if x%1==0:
+        return int(x)
+    else:
+        return x
+
 def write_file(fname, comments, files, lines, triangles, quads):
     with open(fname, 'w') as outfile:
         for comment in comments:
             outfile.write("0 %s\n"%comment)
         for (x,y,z,a,b,c,d,e,f,g,h,i,fs) in files:
-            x,y,z,a,b,c,d,e,f,g,h,i = [round(float(t),6)+0 for t in x,y,z,a,b,c,d,e,f,g,h,i]
+            x,y,z,a,b,c,d,e,f,g,h,i = [toint(round(float(t),6)+0) for t in x,y,z,a,b,c,d,e,f,g,h,i]
             outfile.write("1 16 %s %s %s %s %s %s %s %s %s %s %s %s %s\n"%(x,y,z,a,b,c,d,e,f,g,h,i,fs))
         for (x1, y1, z1), (x2, y2, z2) in lines:
-            x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
+            x1,y1,z1,x2,y2,z2 = [toint(round(t,6)+0) for t in x1,y1,z1,x2,y2,z2]
             outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
         for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
-            x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
+            x1,y1,z1,x2,y2,z2,x3,y3,z3 = [toint(round(t,6)+0) for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
             outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
                 x1, y1, z1, x2, y2, z2, x3, y3, z3))
         for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
-            x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
+            x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [toint(round(t,6)+0) for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
             outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
                 x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
 
