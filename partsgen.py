@@ -319,18 +319,16 @@ def render_part(part):
     # handle bricks, plates and slope brick 31        #
     ###################################################
     if m.group('type') == 'Baseplate':
-        #for z in range(studsz):
-        #    for x in range(studsx):
-        #        files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud1.dat"))
         rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
         for x,z,s in rects:
-            files.append(((x+s/2)*20, 0, (z+s/2)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
+            files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
         files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,4,0,0,0,studsz*20,"box.dat"))
     elif m.group('type') in ['Brick', 'Plate'] and m.group('corner'):
-        for z in range(studsz):
-            for x in range(studsx):
-                if z >= studsz/2 or x >= studsx/2:
-                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud1.dat"))
+        for z in [0,1]:
+            for x in [0,1]:
+                if z == 0 and x == 0:
+                    continue
+                files.append((-x*studsx*10+studsx*5, 0, -studsz*z*10+studsz*5,1,0,0,0,1,0,0,0,1,"stud%d.dat"%(studsz/2)))
         # create top, bottom, inner and outer rectangles
         # draw an L
         coords = [(0,0),(1,0),(1,-1),(-1,-1),(-1,1),(0,1)]
@@ -369,9 +367,9 @@ def render_part(part):
         if m.group('centerstud'):
             files.append((0,0,0,1,0,0,0,1,0,0,0,1,"stud1.dat"))
         elif m.group('type') not in ['Slope Brick 31', 'Tile']:
-            for z in range(studsz):
-                for x in range(studsx):
-                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud1.dat"))
+            rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
+            for x,z,s in rects:
+                files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
         # outer box
         files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,height,0,0,0,studsz*20,"openbox.dat"))
         # inner box
@@ -524,9 +522,9 @@ def render_part(part):
         ###################################################
         else:
             if m.group('slope') in ['Inverted', 'Inverted Double Convex']:
-                for z in range(studsz):
-                    for x in range(studsx):
-                        files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud1.dat"))
+                rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
+                for x,z,s in rects:
+                    files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
             elif m.group('slope') == 'Double Convex':
                 files.append((-10*(studsx-1), 0, 10*(studsz-1),1,0,0,0,1,0,0,0,1,"stud1.dat"))
             elif m.group('slope') == 'Double Concave':
