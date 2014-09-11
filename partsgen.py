@@ -18,7 +18,6 @@ import re
 wrap = lambda l: zip(l, l[1:]+l[:1])
 sign = lambda x: copysign(1, x)
 
-studsides = 16
 
 parts = [
         ("3005" , "Brick 1 x 1"),
@@ -170,10 +169,14 @@ def write_file(fname, comments, files, lines, triangles, quads):
             outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
                 x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
 
-def drawstud(studsx, studsz, x, z, lines, triangles, quads):
+def drawstud():
+    lines = list()
+    triangles = list()
+    quads = list()
     # each stud is 4 LDU high and studs are 20 LDU apart
-    center = ((studsx/2.0 - x)*20 - 10, -4, (studsz/2.0 - z)*20 - 10)
+    center = (0, -4, 0)
     # each stud has a radius of 6 LDU
+    studsides = 16
     circle = [(center[0] + sin((side*2*pi)/studsides)*6,
         center[2] + cos((side*2*pi)/studsides)*6)
         for side in range(studsides)]
@@ -189,6 +192,7 @@ def drawstud(studsx, studsz, x, z, lines, triangles, quads):
         # write the lines top and bottom
         lines.append(((p1[0], -4, p1[1]), (p2[0], -4, p2[1])))
         lines.append(((p1[0], 0, p1[1]), (p2[0], 0, p2[1])))
+    return lines, triangles, quads
 
 def render_part(part):
     partid, parttext = part[:2]
@@ -646,10 +650,7 @@ def render_part(part):
 
 
 if __name__ == "__main__":
-    lines = list()
-    triangles = list()
-    quads = list()
-    drawstud(1, 1, 0, 0, lines, triangles, quads)
+    lines, triangles, quads = drawstud()
     write_file("parts/stud.dat", [], [], lines, triangles, quads)
     for part in parts:
         render_part(part)
