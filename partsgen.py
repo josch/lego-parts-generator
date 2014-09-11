@@ -194,6 +194,26 @@ def drawstud():
         lines.append(((p1[0], 0, p1[1]), (p2[0], 0, p2[1])))
     return lines, triangles, quads
 
+def drawbox():
+    lines = list()
+    triangles = list()
+    quads = list()
+    outertopcoords = [(0,0,0),(1,0,0),(1,0,1),(0,0,1)]
+    outerbottomcoords = [(x, 1, z) for x,_,z in outertopcoords]
+    # write outer top plate and lines
+    quads.append(outertopcoords)
+    for p1, p2 in wrap(outertopcoords):
+        lines.append((p1, p2))
+    # outer sides and lines
+    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
+        quads.append((p1,p2,p4,p3))
+        lines.append((p1,p3))
+    # write outer bottom plate and lines
+    quads.append(outerbottomcoords)
+    for p1, p2 in wrap(outerbottomcoords):
+        lines.append((p1, p2))
+    return lines, triangles, quads
+
 def render_part(part):
     partid, parttext = part[:2]
     ###################################################
@@ -252,22 +272,7 @@ def render_part(part):
         for z in range(studsz):
             for x in range(studsx):
                 files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud.dat"))
-        coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
-        outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
-        # baseplates are 4 LDU high
-        outerbottomcoords = [(x, 4, z) for x,y,z in outertopcoords]
-        # write outer top plate and lines
-        quads.append(outertopcoords)
-        for p1, p2 in wrap(outertopcoords):
-            lines.append((p1, p2))
-        # outer sides and lines
-        for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
-            quads.append((p1,p2,p4,p3))
-            lines.append((p1,p3))
-        # write outer bottom plate and lines
-        quads.append(outerbottomcoords)
-        for p1, p2 in wrap(outerbottomcoords):
-            lines.append((p1, p2))
+        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,4,0,0,0,studsz*20,"box.dat"))
     elif m.group('type') in ['Brick', 'Plate', 'Slope Brick 31', 'Tile']:
         # draw studs
         if m.group('centerstud'):
@@ -652,5 +657,7 @@ def render_part(part):
 if __name__ == "__main__":
     lines, triangles, quads = drawstud()
     write_file("parts/stud.dat", [], [], lines, triangles, quads)
+    lines, triangles, quads = drawbox()
+    write_file("parts/box.dat", [], [], lines, triangles, quads)
     for part in parts:
         render_part(part)
