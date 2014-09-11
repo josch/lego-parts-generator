@@ -214,6 +214,24 @@ def drawbox():
         lines.append((p1, p2))
     return lines, triangles, quads
 
+def drawopenbox():
+    lines = list()
+    triangles = list()
+    quads = list()
+    outertopcoords = [(0,0,0),(1,0,0),(1,0,1),(0,0,1)]
+    outerbottomcoords = [(x, 1, z) for x,_,z in outertopcoords]
+    # write outer top plate and lines
+    quads.append(outertopcoords)
+    for p1, p2 in wrap(outertopcoords):
+        lines.append((p1, p2))
+    # outer sides and lines
+    for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
+        quads.append((p1,p2,p4,p3))
+        lines.append((p1,p3))
+    for p1, p2 in wrap(outerbottomcoords):
+        lines.append((p1, p2))
+    return lines, triangles, quads
+
 def render_part(part):
     partid, parttext = part[:2]
     ###################################################
@@ -273,37 +291,23 @@ def render_part(part):
             for x in range(studsx):
                 files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud.dat"))
         files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,4,0,0,0,studsz*20,"box.dat"))
-    elif m.group('type') in ['Brick', 'Plate', 'Slope Brick 31', 'Tile']:
-        # draw studs
-        if m.group('centerstud'):
-            files.append((0,0,0,1,0,0,0,1,0,0,0,1,"stud.dat"))
-        elif m.group('type') not in ['Slope Brick 31', 'Tile']:
-            for z in range(studsz):
-                for x in range(studsx):
-                    if not m.group('corner') or z >= studsz/2 or x >= studsx/2:
-                        files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud.dat"))
+    elif m.group('type') in ['Brick', 'Plate'] and m.group('corner'):
+        for z in range(studsz):
+            for x in range(studsx):
+                if z >= studsz/2 or x >= studsx/2:
+                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud.dat"))
         # create top, bottom, inner and outer rectangles
-        # in case of a corner, draw an L otherwise draw a square
-        if m.group('corner'):
-            coords = [(0,0),(1,0),(1,-1),(-1,-1),(-1,1),(0,1)]
-        else:
-            coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
+        # draw an L
+        coords = [(0,0),(1,0),(1,-1),(-1,-1),(-1,1),(0,1)]
         # walls are 4 LDU thick, use sign() in case x or y are zero
-        if m.group('type') == 'Slope Brick 31':
-            outertopcoords = [(studsx*10*x, 0 if z == 1 else height-4, studsz*10*z) for x,z in coords]
-            innertopcoords = [(studsx*10*x-sign(x)*4, height-4, studsz*10*z-sign(z)*4) for x,z in coords]
-        else:
-            outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
-            innertopcoords = [(studsx*10*x-sign(x)*4, 4, studsz*10*z-sign(z)*4) for x,z in coords]
+        outertopcoords = [(studsx*10*x, 0, studsz*10*z) for x,z in coords]
+        innertopcoords = [(studsx*10*x-sign(x)*4, 4, studsz*10*z-sign(z)*4) for x,z in coords]
         outerbottomcoords = [(x, height, z) for x,y,z in outertopcoords]
         innerbottomcoords = [(x, height, z) for x,y,z in innertopcoords]
         # write outer top plate and lines
-        # in case of a corner draw two trapezoids, otherwise draw a rectangle
-        if m.group('corner'):
-            quads.append(outertopcoords[:4])
-            quads.append(outertopcoords[3:]+outertopcoords[:1])
-        else:
-            quads.append(outertopcoords)
+        # draw two trapezoids
+        quads.append(outertopcoords[:4])
+        quads.append(outertopcoords[3:]+outertopcoords[:1])
         for p1, p2 in wrap(outertopcoords):
             lines.append((p1, p2))
         # outer sides and lines
@@ -311,12 +315,59 @@ def render_part(part):
             quads.append((p1,p2,p4,p3))
             lines.append((p1,p3))
         # write inner top plate and lines
-        # in case of a corner draw two trapezoids, otherwise draw a rectangle
-        if m.group('corner'):
-            quads.append(innertopcoords[:4])
-            quads.append(innertopcoords[3:]+innertopcoords[:1])
-        else:
-            quads.append(innertopcoords)
+        # draw two trapezoids
+        quads.append(innertopcoords[:4])
+        quads.append(innertopcoords[3:]+innertopcoords[:1])
+        for p1, p2 in wrap(innertopcoords):
+            lines.append((p1, p2))
+        # inner sides and lines
+        for (p1, p2), (p3, p4) in zip(wrap(innertopcoords), wrap(innerbottomcoords)):
+            quads.append((p1,p2,p4,p3))
+            lines.append((p1,p3))
+        # write out bottom with trapezoids and lines
+        for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
+            quads.append((p1, p2, p4, p3))
+            lines.append((p1, p2))
+            lines.append((p3, p4))
+    elif m.group('type') in ['Brick', 'Plate', 'Tile']:
+        # draw studs
+        if m.group('centerstud'):
+            files.append((0,0,0,1,0,0,0,1,0,0,0,1,"stud.dat"))
+        elif m.group('type') not in ['Slope Brick 31', 'Tile']:
+            for z in range(studsz):
+                for x in range(studsx):
+                    files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud.dat"))
+        # outer box
+        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,height,0,0,0,studsz*20,"openbox.dat"))
+        # inner box
+        files.append((-studsx*10+4,4,-studsz*10+4,studsx*20-8,0,0,0,height-4,0,0,0,studsz*20-8,"openbox.dat"))
+        # write out bottom with trapezoids
+        coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
+        outerbottomcoords = [(studsx*10*x, height, studsz*10*z) for x,z in coords]
+        innerbottomcoords = [(studsx*10*x-sign(x)*4, height, studsz*10*z-sign(z)*4) for x,z in coords]
+        for (p1, p2), (p3, p4) in zip(wrap(innerbottomcoords), wrap(outerbottomcoords)):
+            quads.append((p1, p2, p4, p3))
+    elif m.group('type') == 'Slope Brick 31':
+        # create top, bottom, inner and outer rectangles
+        # draw a square
+        coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
+        # walls are 4 LDU thick, use sign() in case x or y are zero
+        outertopcoords = [(studsx*10*x, 0 if z == 1 else height-4, studsz*10*z) for x,z in coords]
+        innertopcoords = [(studsx*10*x-sign(x)*4, height-4, studsz*10*z-sign(z)*4) for x,z in coords]
+        outerbottomcoords = [(x, height, z) for x,y,z in outertopcoords]
+        innerbottomcoords = [(x, height, z) for x,y,z in innertopcoords]
+        # write outer top plate and lines
+        # draw a rectangle
+        quads.append(outertopcoords)
+        for p1, p2 in wrap(outertopcoords):
+            lines.append((p1, p2))
+        # outer sides and lines
+        for (p1, p2), (p3, p4) in zip(wrap(outertopcoords), wrap(outerbottomcoords)):
+            quads.append((p1,p2,p4,p3))
+            lines.append((p1,p3))
+        # write inner top plate and lines
+        # draw a rectangle
+        quads.append(innertopcoords)
         for p1, p2 in wrap(innertopcoords):
             lines.append((p1, p2))
         # inner sides and lines
@@ -659,5 +710,7 @@ if __name__ == "__main__":
     write_file("parts/stud.dat", [], [], lines, triangles, quads)
     lines, triangles, quads = drawbox()
     write_file("parts/box.dat", [], [], lines, triangles, quads)
+    lines, triangles, quads = drawopenbox()
+    write_file("parts/openbox.dat", [], [], lines, triangles, quads)
     for part in parts:
         render_part(part)
