@@ -151,6 +151,25 @@ parts = [
         ("87580", "Plate 2 x 2 with Center Stud"),
     ]
 
+def write_file(fname, comments, files, lines, triangles, quads):
+    with open(fname, 'w') as outfile:
+        for comment in comments:
+            outfile.write("0 %s\n"%comment)
+        for (x,y,z,f) in files:
+            x,y,z = [round(t,6)+0 for t in x,y,z]
+            outfile.write("1 16 %s %s %s 1 0 0 0 1 0 0 0 1 %s\n"%(x,y,z,f))
+        for (x1, y1, z1), (x2, y2, z2) in lines:
+            x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
+            outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
+        for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
+            x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
+            outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
+                x1, y1, z1, x2, y2, z2, x3, y3, z3))
+        for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
+            x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
+            outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
+                x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
+
 def drawstud(studsx, studsz, x, z, lines, triangles, quads):
     # each stud is 4 LDU high and studs are 20 LDU apart
     center = ((studsx/2.0 - x)*20 - 10, -4, (studsz/2.0 - z)*20 - 10)
@@ -605,23 +624,7 @@ def render_part(part):
     ###################################################
     # write data to file                              #
     ###################################################
-    outfile = open("parts/%s.dat"%partid, 'w')
-    outfile.write("0 %s\n"%parttext)
-    for (x,y,z,f) in files:
-        x,y,z = [round(t,6)+0 for t in x,y,z]
-        outfile.write("1 16 %s %s %s 1 0 0 0 1 0 0 0 1 %s\n"%(x,y,z,f))
-    for (x1, y1, z1), (x2, y2, z2) in lines:
-        x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
-        outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
-    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
-        x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
-        outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
-            x1, y1, z1, x2, y2, z2, x3, y3, z3))
-    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
-        x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
-        outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
-            x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
-    outfile.close()
+    write_file("parts/%s.dat"%partid, [parttext], files, lines, triangles, quads)
 
 # coordinates are normalized with six significant digits after the comma
 # because of the following distribution of the official ldraw files:
@@ -647,18 +650,6 @@ if __name__ == "__main__":
     triangles = list()
     quads = list()
     drawstud(1, 1, 0, 0, lines, triangles, quads)
-    outfile = open("parts/stud.dat", 'w')
-    for (x1, y1, z1), (x2, y2, z2) in lines:
-        x1,y1,z1,x2,y2,z2 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2]
-        outfile.write("2 24 %s %s %s %s %s %s\n"%(x1, y1, z1, x2, y2, z2))
-    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in triangles:
-        x1,y1,z1,x2,y2,z2,x3,y3,z3 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3]
-        outfile.write("3 16 %s %s %s %s %s %s %s %s %s\n"%(
-            x1, y1, z1, x2, y2, z2, x3, y3, z3))
-    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4) in quads:
-        x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = [round(t,6)+0 for t in x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4]
-        outfile.write("4 16 %s %s %s %s %s %s %s %s %s %s %s %s\n"%(
-            x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4))
-    outfile.close()
+    write_file("parts/stud.dat", [], [], lines, triangles, quads)
     for part in parts:
         render_part(part)
