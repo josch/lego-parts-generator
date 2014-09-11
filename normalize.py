@@ -61,11 +61,6 @@ def handle_file(fname,lines,triangles,quads):
                 print("unknown line type: %s"%t[0], file=sys.stderr)
                 exit(1)
 
-def rotate(cycle):
-    tcmp = lambda a,b: cmp(a[1],b[1])
-    smallest_idx = min(enumerate(cycle), key=cmp_to_key(tcmp))[0]
-    return cycle[smallest_idx:]+cycle[:smallest_idx]
-
 def normalize_l(c,x1,y1,z1,x2,y2,z2):
     if (x1,y1,z1) < (x2,y2,z2):
         return (c,x1,y1,z1,x2,y2,z2)
@@ -73,14 +68,23 @@ def normalize_l(c,x1,y1,z1,x2,y2,z2):
         return (c,x2,y2,z2,x1,y1,z1)
 
 def normalize_t(c,x1,y1,z1,x2,y2,z2,x3,y3,z3):
-    #pts = rotate([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3)])
-    pts = [(x1,y1,z1),(x2,y2,z2),(x3,y3,z3)]
+    # since winding order does not matter, we just sort
+    pts = sorted([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3)])
     x1,y1,z1,x2,y2,z2,x3,y3,z3 = itertools.chain.from_iterable(pts)
     return (c,x1,y1,z1,x2,y2,z2,x3,y3,z3)
 
+def rotate(cycle):
+    tcmp = lambda a,b: cmp(a[1],b[1])
+    smallest_idx = min(enumerate(cycle), key=cmp_to_key(tcmp))[0]
+    return cycle[smallest_idx:]+cycle[:smallest_idx]
+
 def normalize_q(c,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4):
-    #pts = rotate([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4)])
-    pts = [(x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4)]
+    # rotate the smallest coordinate to the front
+    pts = rotate([(x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4)])
+    # winding order does not matter, so deciding whether or not the next point
+    # is the second or last, we pick the smallest
+    if pts[1] > pts[3]:
+        pts = [pts[0],pts[3],pts[2],pts[1]]
     x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4 = itertools.chain.from_iterable(pts)
     return (c,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4)
 
