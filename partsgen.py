@@ -327,14 +327,14 @@ def render_part(part):
     if m.group('type') == 'Baseplate':
         rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
         for x,z,s in rects:
-            files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
-        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,4,0,0,0,studsz*20,"box.dat"))
+            files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stug-%dx%d.dat"%(s,s)))
+        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,4,0,0,0,studsz*20,"lpg_box.dat"))
     elif m.group('type') in ['Brick', 'Plate'] and m.group('corner'):
         for z in [0,1]:
             for x in [0,1]:
                 if z == 0 and x == 0:
                     continue
-                files.append((-x*studsx*10+studsx*5, 0, -studsz*z*10+studsz*5,1,0,0,0,1,0,0,0,1,"stud%d.dat"%(studsz/2)))
+                files.append((-x*studsx*10+studsx*5, 0, -studsz*z*10+studsz*5,1,0,0,0,1,0,0,0,1,"stug-%dx%d.dat"%(studsz/2,studsz/2)))
         # create top, bottom, inner and outer rectangles
         # draw an L
         coords = [(0,0),(1,0),(1,-1),(-1,-1),(-1,1),(0,1)]
@@ -371,15 +371,15 @@ def render_part(part):
     elif m.group('type') in ['Brick', 'Plate', 'Tile']:
         # draw studs
         if m.group('centerstud'):
-            files.append((0,0,0,1,0,0,0,1,0,0,0,1,"stud1.dat"))
+            files.append((0,0,0,1,0,0,0,1,0,0,0,1,"stug-1x1.dat"))
         elif m.group('type') not in ['Slope Brick 31', 'Tile']:
             rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
             for x,z,s in rects:
-                files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
+                files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stug-%dx%d.dat"%(s,s)))
         # outer box
-        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,height,0,0,0,studsz*20,"openbox.dat"))
+        files.append((-studsx*10,0,-studsz*10,studsx*20,0,0,0,height,0,0,0,studsz*20,"lpg_openbox.dat"))
         # inner box
-        files.append((-studsx*10+4,4,-studsz*10+4,studsx*20-8,0,0,0,height-4,0,0,0,studsz*20-8,"openbox.dat"))
+        files.append((-studsx*10+4,4,-studsz*10+4,studsx*20-8,0,0,0,height-4,0,0,0,studsz*20-8,"lpg_openbox.dat"))
         # write out bottom with trapezoids
         coords = [(1,1),(1,-1),(-1,-1),(-1,1)]
         outerbottomcoords = [(studsx*10*x, height, studsz*10*z) for x,z in coords]
@@ -530,17 +530,17 @@ def render_part(part):
             if m.group('slope') in ['Inverted', 'Inverted Double Convex']:
                 rects = subdivide((-studsx/2.0,-studsz/2.0,studsx,studsz))
                 for x,z,s in rects:
-                    files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stud%d.dat"%s))
+                    files.append(((x+s/2.0)*20, 0, (z+s/2.0)*20,1,0,0,0,1,0,0,0,1,"stug-%dx%d.dat"%(s,s)))
             elif m.group('slope') == 'Double Convex':
-                files.append((-10*(studsx-1), 0, 10*(studsz-1),1,0,0,0,1,0,0,0,1,"stud1.dat"))
+                files.append((-10*(studsx-1), 0, 10*(studsz-1),1,0,0,0,1,0,0,0,1,"stug-1x1.dat"))
             elif m.group('slope') == 'Double Concave':
                 for z in range(studsz):
                     for x in range(studsx):
                         if z == 0 or x == studsx-1:
-                            files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stud1.dat"))
+                            files.append(((studsx/2.0 - x)*20 - 10, 0, (studsz/2.0 - z)*20 - 10,1,0,0,0,1,0,0,0,1,"stug-1x1.dat"))
             else:
                 for x in range(studsx):
-                    files.append(((studsx/2.0 - x)*20 - 10, 0, 10*(studsz-1),1,0,0,0,1,0,0,0,1,"stud1.dat"))
+                    files.append(((studsx/2.0 - x)*20 - 10, 0, 10*(studsz-1),1,0,0,0,1,0,0,0,1,"stug-1x1.dat"))
             ###################################################
             # create top, bottom, inner and outer rectangles  #
             ###################################################
@@ -746,16 +746,16 @@ def render_part(part):
 
 if __name__ == "__main__":
     lines, triangles, quads = drawstud()
-    write_file("parts/stud1.dat", [], [], lines, triangles, quads)
+    write_file("parts/stug-1x1.dat", [], [], lines, triangles, quads)
     for s in [2,4,8,16,32]:
         files = list()
         for z in range(2):
             for x in range(2):
-                files.append((s*(5 - x*10), 0, s*(5 - z*10),1,0,0,0,1,0,0,0,1,"stud%d.dat"%(s/2)))
-        write_file("parts/stud%d.dat"%s, [], files, [], [], [])
+                files.append((s*(5 - x*10), 0, s*(5 - z*10),1,0,0,0,1,0,0,0,1,"stug-%dx%d.dat"%(s/2,s/2)))
+        write_file("parts/stug-%dx%d.dat"%(s,s), [], files, [], [], [])
     lines, triangles, quads = drawbox()
-    write_file("parts/box.dat", [], [], lines, triangles, quads)
+    write_file("parts/lpg_box.dat", [], [], lines, triangles, quads)
     lines, triangles, quads = drawopenbox()
-    write_file("parts/openbox.dat", [], [], lines, triangles, quads)
+    write_file("parts/lpg_openbox.dat", [], [], lines, triangles, quads)
     for part in parts:
         render_part(part)
